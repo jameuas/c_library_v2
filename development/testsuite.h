@@ -13,19 +13,16 @@ extern "C" {
 #ifndef MAVLINK_TEST_ALL
 #define MAVLINK_TEST_ALL
 static void mavlink_test_standard(uint8_t, uint8_t, mavlink_message_t *last_msg);
-static void mavlink_test_custom_messages(uint8_t, uint8_t, mavlink_message_t *last_msg);
 static void mavlink_test_development(uint8_t, uint8_t, mavlink_message_t *last_msg);
 
 static void mavlink_test_all(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
 {
     mavlink_test_standard(system_id, component_id, last_msg);
-    mavlink_test_custom_messages(system_id, component_id, last_msg);
     mavlink_test_development(system_id, component_id, last_msg);
 }
 #endif
 
 #include "../standard/testsuite.h"
-#include "../custom_messages/testsuite.h"
 
 
 static void mavlink_test_param_ack_transaction(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
@@ -343,70 +340,6 @@ static void mavlink_test_wifi_network_info(uint8_t system_id, uint8_t component_
 #endif
 }
 
-static void mavlink_test_component_information_basic(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
-{
-#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
-    mavlink_status_t *status = mavlink_get_channel_status(MAVLINK_COMM_0);
-        if ((status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) && MAVLINK_MSG_ID_COMPONENT_INFORMATION_BASIC >= 256) {
-            return;
-        }
-#endif
-    mavlink_message_t msg;
-        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-        uint16_t i;
-    mavlink_component_information_basic_t packet_in = {
-        93372036854775807ULL,963497880,{ 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72 },{ 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168 },"YZABCDEFGHIJKLMNOPQRSTU","WXYZABCDEFGHIJKLMNOPQRS"
-    };
-    mavlink_component_information_basic_t packet1, packet2;
-        memset(&packet1, 0, sizeof(packet1));
-        packet1.capabilities = packet_in.capabilities;
-        packet1.time_boot_ms = packet_in.time_boot_ms;
-        
-        mav_array_memcpy(packet1.vendor_name, packet_in.vendor_name, sizeof(uint8_t)*32);
-        mav_array_memcpy(packet1.model_name, packet_in.model_name, sizeof(uint8_t)*32);
-        mav_array_memcpy(packet1.software_version, packet_in.software_version, sizeof(char)*24);
-        mav_array_memcpy(packet1.hardware_version, packet_in.hardware_version, sizeof(char)*24);
-        
-#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
-        if (status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) {
-           // cope with extensions
-           memset(MAVLINK_MSG_ID_COMPONENT_INFORMATION_BASIC_MIN_LEN + (char *)&packet1, 0, sizeof(packet1)-MAVLINK_MSG_ID_COMPONENT_INFORMATION_BASIC_MIN_LEN);
-        }
-#endif
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_component_information_basic_encode(system_id, component_id, &msg, &packet1);
-    mavlink_msg_component_information_basic_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_component_information_basic_pack(system_id, component_id, &msg , packet1.time_boot_ms , packet1.vendor_name , packet1.model_name , packet1.software_version , packet1.hardware_version , packet1.capabilities );
-    mavlink_msg_component_information_basic_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_component_information_basic_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.time_boot_ms , packet1.vendor_name , packet1.model_name , packet1.software_version , packet1.hardware_version , packet1.capabilities );
-    mavlink_msg_component_information_basic_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-        mavlink_msg_to_send_buffer(buffer, &msg);
-        for (i=0; i<mavlink_msg_get_send_buffer_length(&msg); i++) {
-            comm_send_ch(MAVLINK_COMM_0, buffer[i]);
-        }
-    mavlink_msg_component_information_basic_decode(last_msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-        
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_component_information_basic_send(MAVLINK_COMM_1 , packet1.time_boot_ms , packet1.vendor_name , packet1.model_name , packet1.software_version , packet1.hardware_version , packet1.capabilities );
-    mavlink_msg_component_information_basic_decode(last_msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-#ifdef MAVLINK_HAVE_GET_MESSAGE_INFO
-    MAVLINK_ASSERT(mavlink_get_message_info_by_name("COMPONENT_INFORMATION_BASIC") != NULL);
-    MAVLINK_ASSERT(mavlink_get_message_info_by_id(MAVLINK_MSG_ID_COMPONENT_INFORMATION_BASIC) != NULL);
-#endif
-}
-
 static void mavlink_test_group_start(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
 {
 #ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
@@ -529,131 +462,6 @@ static void mavlink_test_group_end(uint8_t system_id, uint8_t component_id, mavl
 #endif
 }
 
-static void mavlink_test_available_modes(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
-{
-#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
-    mavlink_status_t *status = mavlink_get_channel_status(MAVLINK_COMM_0);
-        if ((status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) && MAVLINK_MSG_ID_AVAILABLE_MODES >= 256) {
-            return;
-        }
-#endif
-    mavlink_message_t msg;
-        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-        uint16_t i;
-    mavlink_available_modes_t packet_in = {
-        963497464,17,84,151,218,"IJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDE"
-    };
-    mavlink_available_modes_t packet1, packet2;
-        memset(&packet1, 0, sizeof(packet1));
-        packet1.custom_mode = packet_in.custom_mode;
-        packet1.number_modes = packet_in.number_modes;
-        packet1.mode_index = packet_in.mode_index;
-        packet1.standard_mode = packet_in.standard_mode;
-        packet1.base_mode = packet_in.base_mode;
-        
-        mav_array_memcpy(packet1.mode_name, packet_in.mode_name, sizeof(char)*50);
-        
-#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
-        if (status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) {
-           // cope with extensions
-           memset(MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN + (char *)&packet1, 0, sizeof(packet1)-MAVLINK_MSG_ID_AVAILABLE_MODES_MIN_LEN);
-        }
-#endif
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_available_modes_encode(system_id, component_id, &msg, &packet1);
-    mavlink_msg_available_modes_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_available_modes_pack(system_id, component_id, &msg , packet1.number_modes , packet1.mode_index , packet1.standard_mode , packet1.base_mode , packet1.custom_mode , packet1.mode_name );
-    mavlink_msg_available_modes_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_available_modes_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.number_modes , packet1.mode_index , packet1.standard_mode , packet1.base_mode , packet1.custom_mode , packet1.mode_name );
-    mavlink_msg_available_modes_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-        mavlink_msg_to_send_buffer(buffer, &msg);
-        for (i=0; i<mavlink_msg_get_send_buffer_length(&msg); i++) {
-            comm_send_ch(MAVLINK_COMM_0, buffer[i]);
-        }
-    mavlink_msg_available_modes_decode(last_msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-        
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_available_modes_send(MAVLINK_COMM_1 , packet1.number_modes , packet1.mode_index , packet1.standard_mode , packet1.base_mode , packet1.custom_mode , packet1.mode_name );
-    mavlink_msg_available_modes_decode(last_msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-#ifdef MAVLINK_HAVE_GET_MESSAGE_INFO
-    MAVLINK_ASSERT(mavlink_get_message_info_by_name("AVAILABLE_MODES") != NULL);
-    MAVLINK_ASSERT(mavlink_get_message_info_by_id(MAVLINK_MSG_ID_AVAILABLE_MODES) != NULL);
-#endif
-}
-
-static void mavlink_test_current_mode(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
-{
-#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
-    mavlink_status_t *status = mavlink_get_channel_status(MAVLINK_COMM_0);
-        if ((status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) && MAVLINK_MSG_ID_CURRENT_MODE >= 256) {
-            return;
-        }
-#endif
-    mavlink_message_t msg;
-        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
-        uint16_t i;
-    mavlink_current_mode_t packet_in = {
-        963497464,17,84
-    };
-    mavlink_current_mode_t packet1, packet2;
-        memset(&packet1, 0, sizeof(packet1));
-        packet1.custom_mode = packet_in.custom_mode;
-        packet1.standard_mode = packet_in.standard_mode;
-        packet1.base_mode = packet_in.base_mode;
-        
-        
-#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
-        if (status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) {
-           // cope with extensions
-           memset(MAVLINK_MSG_ID_CURRENT_MODE_MIN_LEN + (char *)&packet1, 0, sizeof(packet1)-MAVLINK_MSG_ID_CURRENT_MODE_MIN_LEN);
-        }
-#endif
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_current_mode_encode(system_id, component_id, &msg, &packet1);
-    mavlink_msg_current_mode_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_current_mode_pack(system_id, component_id, &msg , packet1.standard_mode , packet1.base_mode , packet1.custom_mode );
-    mavlink_msg_current_mode_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_current_mode_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.standard_mode , packet1.base_mode , packet1.custom_mode );
-    mavlink_msg_current_mode_decode(&msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-        memset(&packet2, 0, sizeof(packet2));
-        mavlink_msg_to_send_buffer(buffer, &msg);
-        for (i=0; i<mavlink_msg_get_send_buffer_length(&msg); i++) {
-            comm_send_ch(MAVLINK_COMM_0, buffer[i]);
-        }
-    mavlink_msg_current_mode_decode(last_msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-        
-        memset(&packet2, 0, sizeof(packet2));
-    mavlink_msg_current_mode_send(MAVLINK_COMM_1 , packet1.standard_mode , packet1.base_mode , packet1.custom_mode );
-    mavlink_msg_current_mode_decode(last_msg, &packet2);
-        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
-
-#ifdef MAVLINK_HAVE_GET_MESSAGE_INFO
-    MAVLINK_ASSERT(mavlink_get_message_info_by_name("CURRENT_MODE") != NULL);
-    MAVLINK_ASSERT(mavlink_get_message_info_by_id(MAVLINK_MSG_ID_CURRENT_MODE) != NULL);
-#endif
-}
-
 static void mavlink_test_development(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
 {
     mavlink_test_param_ack_transaction(system_id, component_id, last_msg);
@@ -661,11 +469,8 @@ static void mavlink_test_development(uint8_t system_id, uint8_t component_id, ma
     mavlink_test_mission_checksum(system_id, component_id, last_msg);
     mavlink_test_airspeed(system_id, component_id, last_msg);
     mavlink_test_wifi_network_info(system_id, component_id, last_msg);
-    mavlink_test_component_information_basic(system_id, component_id, last_msg);
     mavlink_test_group_start(system_id, component_id, last_msg);
     mavlink_test_group_end(system_id, component_id, last_msg);
-    mavlink_test_available_modes(system_id, component_id, last_msg);
-    mavlink_test_current_mode(system_id, component_id, last_msg);
 }
 
 #ifdef __cplusplus
