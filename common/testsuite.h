@@ -13729,6 +13729,76 @@ static void mavlink_test_can_filter_modify(uint8_t system_id, uint8_t component_
 #endif
 }
 
+static void mavlink_test_sys_iden_data(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
+{
+#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
+    mavlink_status_t *status = mavlink_get_channel_status(MAVLINK_COMM_0);
+        if ((status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) && MAVLINK_MSG_ID_SYS_IDEN_DATA >= 256) {
+            return;
+        }
+#endif
+    mavlink_message_t msg;
+        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+        uint16_t i;
+    mavlink_sys_iden_data_t packet_in = {
+        17.0,45.0,73.0,101.0,129.0,157.0,185.0,213.0,241.0,269.0,297.0,325.0
+    };
+    mavlink_sys_iden_data_t packet1, packet2;
+        memset(&packet1, 0, sizeof(packet1));
+        packet1.p = packet_in.p;
+        packet1.q = packet_in.q;
+        packet1.r = packet_in.r;
+        packet1.ax = packet_in.ax;
+        packet1.ay = packet_in.ay;
+        packet1.az = packet_in.az;
+        packet1.v = packet_in.v;
+        packet1.alpha = packet_in.alpha;
+        packet1.beta = packet_in.beta;
+        packet1.ail = packet_in.ail;
+        packet1.ele = packet_in.ele;
+        packet1.rud = packet_in.rud;
+        
+        
+#ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
+        if (status->flags & MAVLINK_STATUS_FLAG_OUT_MAVLINK1) {
+           // cope with extensions
+           memset(MAVLINK_MSG_ID_SYS_IDEN_DATA_MIN_LEN + (char *)&packet1, 0, sizeof(packet1)-MAVLINK_MSG_ID_SYS_IDEN_DATA_MIN_LEN);
+        }
+#endif
+        memset(&packet2, 0, sizeof(packet2));
+    mavlink_msg_sys_iden_data_encode(system_id, component_id, &msg, &packet1);
+    mavlink_msg_sys_iden_data_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+    mavlink_msg_sys_iden_data_pack(system_id, component_id, &msg , packet1.p , packet1.q , packet1.r , packet1.ax , packet1.ay , packet1.az , packet1.v , packet1.alpha , packet1.beta , packet1.ail , packet1.ele , packet1.rud );
+    mavlink_msg_sys_iden_data_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+    mavlink_msg_sys_iden_data_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.p , packet1.q , packet1.r , packet1.ax , packet1.ay , packet1.az , packet1.v , packet1.alpha , packet1.beta , packet1.ail , packet1.ele , packet1.rud );
+    mavlink_msg_sys_iden_data_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+        mavlink_msg_to_send_buffer(buffer, &msg);
+        for (i=0; i<mavlink_msg_get_send_buffer_length(&msg); i++) {
+            comm_send_ch(MAVLINK_COMM_0, buffer[i]);
+        }
+    mavlink_msg_sys_iden_data_decode(last_msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+        
+        memset(&packet2, 0, sizeof(packet2));
+    mavlink_msg_sys_iden_data_send(MAVLINK_COMM_1 , packet1.p , packet1.q , packet1.r , packet1.ax , packet1.ay , packet1.az , packet1.v , packet1.alpha , packet1.beta , packet1.ail , packet1.ele , packet1.rud );
+    mavlink_msg_sys_iden_data_decode(last_msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+#ifdef MAVLINK_HAVE_GET_MESSAGE_INFO
+    MAVLINK_ASSERT(mavlink_get_message_info_by_name("SYS_IDEN_DATA") != NULL);
+    MAVLINK_ASSERT(mavlink_get_message_info_by_id(MAVLINK_MSG_ID_SYS_IDEN_DATA) != NULL);
+#endif
+}
+
 static void mavlink_test_wheel_distance(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
 {
 #ifdef MAVLINK_STATUS_FLAG_OUT_MAVLINK1
@@ -14721,6 +14791,7 @@ static void mavlink_test_common(uint8_t system_id, uint8_t component_id, mavlink
     mavlink_test_response_event_error(system_id, component_id, last_msg);
     mavlink_test_canfd_frame(system_id, component_id, last_msg);
     mavlink_test_can_filter_modify(system_id, component_id, last_msg);
+    mavlink_test_sys_iden_data(system_id, component_id, last_msg);
     mavlink_test_wheel_distance(system_id, component_id, last_msg);
     mavlink_test_winch_status(system_id, component_id, last_msg);
     mavlink_test_open_drone_id_basic_id(system_id, component_id, last_msg);
